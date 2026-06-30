@@ -1,0 +1,41 @@
+image:
+  backend: shashankcj/web_app:backend_latest
+  frontend: shashankcj/web_app:frontend_latest
+  celery: shashankcj/web_app:celery_latest
+  postgres: postgres:16-alpine
+  redis: redis:7-alpine
+
+postgres:
+  user: genesis
+  password: genesis123
+  db: genesis
+  port: 5432
+  host: postgres
+
+ingress:
+  host: myapp.local
+
+env:
+  ALLOWED_HOSTS: "*"
+
+  CSRF_TRUSTED_ORIGINS: "http://10.99.1.122:31862,https://10.99.1.122:30848,http://localhost:3000"
+
+  CORS_ALLOWED_ORIGINS: "http://10.99.1.122:31862,https://10.99.1.122:30848,http://localhost:3000"
+
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+
+  USE_SYSTEM_TIMEZONE: "true"
+  MANUAL_TIMEZONE: "Asia/Dubai"
+
+  LOG_DIR: "/opt/genesis-central-server/src/backend/logs"
+
+secret:
+  SECRET_KEY: "w8XEjdY1XE7vIbVBlOVxmoClY9zvA4VLwOL1hf8XH7Z6mrulNoSw1c0A5NUJNM77"
+
+redis:
+  enabled: true
+
+service:
+  backendPort: 8001

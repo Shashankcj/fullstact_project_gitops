@@ -1,0 +1,112 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+kind: ProxmoxMachineTemplate
+metadata:
+  name: control-plane-template
+  namespace: genesis
+spec:
+  template:
+    spec:
+      templateID: 109
+      sourceNode: dev-monitor
+      numCores: 2
+      memoryMiB: 2024
+
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+kind: KubeadmControlPlane
+metadata:
+  name: my-cluster-control-plane
+  namespace: genesis
+
+spec:
+  replicas: 3
+  version: v1.29.15
+
+  machineTemplate:
+    infrastructureRef:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+      kind: ProxmoxMachineTemplate
+      name: control-plane-template
+
+  kubeadmConfigSpec:
+    files:
+      - path: /etc/kubernetes/manifests/kube-vip.yaml
+        owner: root:root
+        permissions: "0644"
+        content: |
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            creationTimestamp: null
+            name: kube-vip
+            namespace: kube-system
+          spec:
+            serviceAccountName: kube-vip
+            containers:
+            - args:
+              - manager
+              env:
+              - name: vip_arp
+                value: "true"
+              - name: port
+                value: "6443"
+              - name: vip_nodename
+                valueFrom:
+                  fieldRef:
+                    fieldPath: spec.nodeName
+              - name: vip_interface
+                value: ens18
+              - name: vip_cidr
+                value: "32"
+              - name: dns_mode
+                value: first
+              - name: cp_enable
+                value: "true"
+              - name: cp_namespace
+                value: kube-system
+              - name: svc_enable
+                value: "true"kube
+              - name: vip_leaderelection
+                value: "false"
+              - name: address
+                value: 10.99.1.249
+              - name: prometheus_server
+                value: :2112
+              image: ghcr.io/kube-vip/kube-vip:v0.8.0
+              imagePullPolicy: IfNotPresent
+              name: kube-vip
+              resources: {}
+              securityContext:
+                capabilities:
+                  add:
+                  - NET_ADMIN
+                  - NET_RAW
+              volumeMounts:
+              - mountPath: /etc/kubernetes/admin.conf
+                name: kubeconfig
+            hostAliases:
+            - hostnames:
+              - kubernetes
+              ip: 127.0.0.1
+            hostNetwork: true
+            volumes:
+            - hostPath:
+                path: /etc/kubernetes/admin.conf
+              name: kubeconfig
+          status: {}
+    
+    clusterConfiguration:
+      controlPlaneEndpoint: "10.99.1.249:6443"
+
+      apiServer:
+        certSANs:
+          - "127.0.0.1"
+          - "10.99.1.249"
+    initConfiguration:
+      nodeRegistration:
+        criSocket: unix:///run/containerd/containerd.sock
+    joinConfiguration:
+      nodeRegistration:
+        criSocket: unix:///run/containerd/containerd.sock
+        kubeletExtraArgs:
+          provider-id: proxmox://'{{ ds.meta_data.instance_id }}'

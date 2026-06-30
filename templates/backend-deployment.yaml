@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: backend
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: backend
+
+  template:
+    metadata:
+      labels:
+        app: backend
+
+    spec:
+      imagePullSecrets:
+        - name: regcred
+
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z postgres 5432; do
+                echo "Waiting for postgres..."
+                sleep 2
+              done
+
+      containers:
+        - name: backend
+
+          image: {{ .Values.image.backend }}
+          imagePullPolicy: Always
+
+          command:
+            - daphne
+            - -b
+            - 0.0.0.0
+            - -p
+            - "8001"
+            - CentralServer.asgi:application
+
+          ports:
+            - containerPort: 8001
+
+          env:
+            - name: REDIS_HOST
+              value: "redis-service"
+
+            - name: REDIS_DB_PORT
+              value: "6379"
+
+            - name: REDIS_DB
+              value: "0"
+
+            - name: POSTGRES_HOST
+              value: "postgres"
+
+            - name: POSTGRES_DB
+              value: "genesis"
+
+            - name: POSTGRES_USER
+              value: "genesis"
+
+            - name: POSTGRES_PASSWORD
+              value: "genesis123"
+
+            - name: POSTGRES_PORT
+              value: "5432"
+
+            - name: DATABASE_URL
+              value: postgres://{{ .Values.postgres.user }}:{{ .Values.postgres.password }}@postgres:5432/{{ .Values.postgres.db }}
+
+            - name: ALLOWED_HOSTS
+              value: {{ .Values.env.ALLOWED_HOSTS | quote }}
+
+            - name: CSRF_TRUSTED_ORIGINS
+              value: {{ .Values.env.CSRF_TRUSTED_ORIGINS | quote }}
+
+            - name: CORS_ALLOWED_ORIGINS
+              value: {{ .Values.env.CORS_ALLOWED_ORIGINS | quote }}
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+          readinessProbe:
+            tcpSocket:
+              port: 8001
+            initialDelaySeconds: 45
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+
+          livenessProbe:
+            tcpSocket:
+              port: 8001
+            initialDelaySeconds: 90
+            periodSeconds: 20
+            timeoutSeconds: 10
+            failureThreshold: 6

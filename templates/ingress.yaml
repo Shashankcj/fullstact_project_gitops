@@ -1,0 +1,49 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+
+metadata:
+  name: app-ingress
+
+spec:
+  ingressClassName: nginx
+
+  tls:
+    - hosts:
+        - 10.99.1.122
+      secretName: genesis-tls
+
+  rules:
+    - http:
+        paths:
+
+          - path: /app
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80
+
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 8001
+
+          - path: /admin
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 8001
+
+          - path: /static
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 8001

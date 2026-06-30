@@ -1,0 +1,89 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate
+
+spec:
+  template:
+    spec:
+      imagePullSecrets:
+        - name: regcred
+
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z postgres 5432; do
+                echo "Waiting for postgres..."
+                sleep 2
+              done
+        - name: wait-for-redis
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z redis-service 6379; do
+                echo "Waiting for redis..."
+                sleep 2
+              done
+
+      containers:
+      - name: migrate
+        image: {{ .Values.image.backend }}
+        imagePullPolicy: Always
+
+        command:
+          - sh
+          - -c
+          - |
+            python manage.py migrate --run-syncdb && \
+            python manage.py globalconfig --bootstrap && \
+            python manage.py globalconfig --load-to-redis 
+        env:
+        - name: POSTGRES_HOST
+          value: "postgres"
+
+        - name: POSTGRES_DB
+          value: "genesis"
+
+        - name: POSTGRES_USER
+          value: "genesis"
+
+        - name: POSTGRES_PASSWORD
+          value: "genesis123"
+
+        - name: POSTGRES_PORT
+          value: "5432"
+
+        - name: REDIS_HOST
+          value: "redis-service"
+        
+        - name: DATABASE_URL
+          value: postgres://{{ .Values.postgres.user }}:{{ .Values.postgres.password }}@postgres:5432/{{ .Values.postgres.db }}
+
+        envFrom:
+        - secretRef:
+            name: backend-secret
+
+        volumeMounts:
+        - name: machine-id
+          mountPath: /host/machine-id
+          readOnly: true
+
+        - name: license
+          mountPath: /var/lib/genesis/license
+
+      restartPolicy: Never
+
+      volumes:
+      - name: machine-id
+        hostPath:
+          path: /etc/machine-id
+
+      - name: license
+        hostPath:
+          path: /var/lib/genesis/license

@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: celery
+  template:
+    metadata:
+      labels:
+        app: celery
+    spec:
+      imagePullSecrets:
+        - name: regcred   # ✅ ADD THIS
+
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z postgres 5432; do
+                echo "Waiting for postgres..."
+                sleep 2
+              done
+
+      containers:
+      - name: celery
+        image: {{ .Values.image.celery }}
+        imagePullPolicy: Always
+        command: ["celery", "-A", "CentralServer", "worker", "--loglevel=info"]
+        env:
+    
+          - name: POSTGRES_HOST
+            value: "postgres"
+
+          - name: POSTGRES_DB
+            value: "genesis"
+
+          - name: POSTGRES_USER
+            value: "genesis"
+
+          - name: POSTGRES_PASSWORD
+            value: "genesis123"
+
+          - name: POSTGRES_PORT
+            value: "5432"
+
+          - name: REDIS_HOST
+            value: "redis-service"
+
+          - name: REDIS_HOST
+            value: "{{ .Values.env.REDIS_HOST }}"
+
+          - name: REDIS_PORT
+            value: "{{ .Values.env.REDIS_PORT }}"
+
+          - name: REDIS_DB
+            value: "{{ .Values.env.REDIS_DB }}"
