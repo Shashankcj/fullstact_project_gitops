@@ -51,7 +51,7 @@ spec:
 
           env:
             - name: SECRET_KEY
-              value: "{{ .Values.secret.SECRET_KEY | quote }}"
+              value: {{ .Values.secret.SECRET_KEY | quote }}
 
             - name: REDIS_HOST
               value: "redis-service"

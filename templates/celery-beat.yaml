@@ -63,7 +63,7 @@ spec:
             value: "5432"
 
           - name: SECRET_KEY
-            value: "{{ .Values.secret.SECRET_KEY | quote }}"
+            value: {{ .Values.secret.SECRET_KEY | quote }}
 
           - name: REDIS_HOST
             value: "{{ .Values.env.REDIS_HOST }}"
