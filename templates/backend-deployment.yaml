@@ -50,6 +50,9 @@ spec:
             - containerPort: 8001
 
           env:
+            - name: SECRET_KEY
+              value: "{{ .Values.secret.SECRET_KEY | quote }}"
+
             - name: REDIS_HOST
               value: "redis-service"
 
