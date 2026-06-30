@@ -1,7 +1,7 @@
 image:
-  backend: shashankcj/web_app:backend_b463e8cd46f7d12811d1b964ad7687fb4990ca71
-  frontend: shashankcj/web_app:frontend_b463e8cd46f7d12811d1b964ad7687fb4990ca71
-  celery: shashankcj/web_app:celery_b463e8cd46f7d12811d1b964ad7687fb4990ca71
+  backend: shashankcj/web_app:backend_3121a9fc464014e0c573285c618f49dc92967458
+  frontend: shashankcj/web_app:frontend_3121a9fc464014e0c573285c618f49dc92967458
+  celery: shashankcj/web_app:celery_3121a9fc464014e0c573285c618f49dc92967458
   postgres: postgres:16-alpine
   redis: redis:7-alpine
 
