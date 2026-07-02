@@ -9,25 +9,20 @@ spec:
     - namePattern: webapp
       images:
         - alias: backend
-          imageName: docker.io/shashankcj/web_app
+          imageName: shashankcj/web_app
           manifestTargets:
             helm:
-              name: image.backend.repository
-              tag: image.backend.tag
-
+              spec: image.backend
         - alias: frontend
-          imageName: docker.io/shashankcj/web_app
+          imageName: shashankcj/web_app
           manifestTargets:
             helm:
-              name: image.frontend.repository
-              tag: image.frontend.tag
-
+              spec: image.frontend
         - alias: celery
-          imageName: docker.io/shashankcj/web_app
+          imageName: shashankcj/web_app
           manifestTargets:
             helm:
-              name: image.celery.repository
-              tag: image.celery.tag
+              spec: image.celery
 
   commonUpdateSettings:
     pullSecret: pullsecret:argocd/regcred
