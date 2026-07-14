@@ -34,6 +34,9 @@ env:
 secret:
   SECRET_KEY: "w8XEjdY1XE7vIbVBlOVxmoClY9zvA4VLwOL1hf8XH7Z6mrulNoSw1c0A5NUJNM77"
 
+regcred:
+   dockerconfigjson: "eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJzaGFzaGFua2NqIiwicGFzc3dvcmQiOiJkY2tyX3BhdF9NUGEwVG9oZ3pLUXJrZ3FKTXdST2N5cWZlSHciLCJlbWFpbCI6InNoYXNoYW5rY2o3QGdtYWlsLmNvbSIsImF1dGgiOiJjMmhoYzJoaGJtdGphanBrWTJ0eVgzQmhkRjlOVUdFd1ZHOW9aM3BMVVhKclozRktUWGRTVDJONWNXWmxTSGM9In19fQ=="
+
 redis:
   enabled: true
 
