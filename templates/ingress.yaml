@@ -7,11 +7,6 @@ metadata:
 spec:
   ingressClassName: nginx
 
-  tls:
-    - hosts:
-        - 10.99.1.122
-      secretName: genesis-tls
-
   rules:
     - http:
         paths:
