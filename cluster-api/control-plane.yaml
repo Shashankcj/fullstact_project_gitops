@@ -9,7 +9,7 @@ spec:
       templateID: 109
       sourceNode: dev-monitor
       numCores: 2
-      memoryMiB: 2024
+      memoryMiB: 2048
 
 ---
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
@@ -19,7 +19,7 @@ metadata:
   namespace: genesis
 
 spec:
-  replicas: 3
+  replicas: 1
   version: v1.29.15
 
   machineTemplate:
@@ -29,6 +29,13 @@ spec:
       name: control-plane-template
 
   kubeadmConfigSpec:
+    postKubeadmCommands:
+      - "sed -i 's#path: /etc/kubernetes/super-admin.conf#path: /etc/kubernetes/admin.conf#' /etc/kubernetes/manifests/kube-vip.yaml"
+      - systemctl restart kubelet
+      - cp /etc/kubernetes/admin.conf /tmp/admin.conf
+      - "sed -i 's#10.99.1.249#127.0.0.1#' /tmp/admin.conf"
+      -  KUBECONFIG=/tmp/admin.conf kubectl apply --validate=false -f /etc/kubernetes/kube-vip-rbac.yaml || true
+
     files:
       - path: /etc/kubernetes/manifests/kube-vip.yaml
         owner: root:root
@@ -41,7 +48,6 @@ spec:
             name: kube-vip
             namespace: kube-system
           spec:
-            serviceAccountName: kube-vip
             containers:
             - args:
               - manager
@@ -65,9 +71,19 @@ spec:
               - name: cp_namespace
                 value: kube-system
               - name: svc_enable
-                value: "true"kube
+                value: "true"
+              - name: svc_leasename
+                value: plndr-svcs-lock
               - name: vip_leaderelection
-                value: "false"
+                value: "true"
+              - name: vip_leasename
+                value: plndr-cp-lock
+              - name: vip_leaseduration
+                value: "5"
+              - name: vip_renewdeadline
+                value: "3"
+              - name: vip_retryperiod
+                value: "1"
               - name: address
                 value: 10.99.1.249
               - name: prometheus_server
@@ -91,9 +107,62 @@ spec:
             hostNetwork: true
             volumes:
             - hostPath:
-                path: /etc/kubernetes/admin.conf
+                path: /etc/kubernetes/super-admin.conf
+                type: FileOrCreate
               name: kubeconfig
           status: {}
+
+      - path: /etc/kubernetes/kube-vip-rbac.yaml
+        owner: root:root
+        permissions: "0644"
+        content: |
+          apiVersion: v1
+          kind: ServiceAccount
+          metadata:
+            name: kube-vip
+            namespace: kube-system
+          ---
+          apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRole
+          metadata:
+            annotations:
+              rbac.authorization.kubernetes.io/autoupdate: "true"
+            name: system:kube-vip-role
+          rules:
+            - apiGroups: [""]
+              resources: ["services/status"]
+              verbs: ["update"]
+            - apiGroups: [""]
+              resources: ["services", "endpoints"]
+              verbs: ["list","get","watch", "update"]
+            - apiGroups: [""]
+              resources: ["nodes"]
+              verbs: ["list","get","watch", "update", "patch"]
+            - apiGroups: ["coordination.k8s.io"]
+              resources: ["leases"]
+              verbs: ["list", "get", "watch", "update", "create"]
+            - apiGroups: ["discovery.k8s.io"]
+              resources: ["endpointslices"]
+              verbs: ["list","get","watch", "update"]
+            - apiGroups: [""]
+              resources: ["pods"]
+              verbs: ["list"]
+
+          ---
+          kind: ClusterRoleBinding
+          apiVersion: rbac.authorization.k8s.io/v1
+          metadata:
+            name: system:kube-vip-binding
+          roleRef:
+            apiGroup: rbac.authorization.k8s.io
+            kind: ClusterRole
+            name: system:kube-vip-role
+          subjects:
+          - kind: ServiceAccount
+            name: kube-vip
+            namespace: kube-system
+
+          
     
     clusterConfiguration:
       controlPlaneEndpoint: "10.99.1.249:6443"
@@ -105,8 +174,11 @@ spec:
     initConfiguration:
       nodeRegistration:
         criSocket: unix:///run/containerd/containerd.sock
+        kubeletExtraArgs:
+          provider-id: proxmox://{{ ds.meta_data.instance_id }}
+
     joinConfiguration:
       nodeRegistration:
         criSocket: unix:///run/containerd/containerd.sock
         kubeletExtraArgs:
-          provider-id: proxmox://'{{ ds.meta_data.instance_id }}'
+          provider-id: proxmox://{{ ds.meta_data.instance_id }}

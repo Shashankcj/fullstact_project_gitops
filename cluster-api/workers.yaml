@@ -6,12 +6,12 @@ metadata:
 
   annotations:
     cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size: "1"
-    cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size: "5"
+    cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size: "7"
 
 spec:
   clusterName: my-cluster
 
-  replicas: 1
+  replicas: 4
 
   selector:
     matchLabels: {}

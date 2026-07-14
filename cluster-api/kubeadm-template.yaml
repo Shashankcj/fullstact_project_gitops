@@ -8,10 +8,7 @@ metadata:
 spec:
   template:
     spec:
-
       joinConfiguration:
-
         nodeRegistration:
-
           kubeletExtraArgs:
-            provider-id: proxmox://'{{ ds.meta_data.instance_id }}'
+            provider-id: proxmox://{{ ds.meta_data.instance_id }}

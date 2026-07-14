@@ -9,5 +9,5 @@ spec:
       sourceNode: dev-monitor
       templateID: 109
       numCores: 2
-      memoryMiB: 2024
+      memoryMiB: 2048
 
