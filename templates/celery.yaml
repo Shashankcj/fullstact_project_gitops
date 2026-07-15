@@ -49,8 +49,6 @@ spec:
           - name: POSTGRES_PORT
             value: "5432"
 
-          - name: REDIS_HOST
-            value: "redis-service"
 
           - name: SECRET_KEY
             value: {{ .Values.secret.SECRET_KEY | quote }}
